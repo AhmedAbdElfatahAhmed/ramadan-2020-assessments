@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
-
+mongoose.set('useFindAndModify', false); // to fix error in server
 const mongodbUrl = 'mongodb://127.0.0.1:27017/'; // TODO: PUT YOUR VALID MONGODB CONNECTION URL HERE <-
 
 if (!mongodbUrl) {

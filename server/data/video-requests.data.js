@@ -42,7 +42,11 @@ module.exports = {
           [vote_type]: ++oldRequest.votes[vote_type],
           [other_type]: oldRequest.votes[other_type],
         },
-      }
+      },
+      // because findByIdAndUpdate()function  return by default old object Not new object
+      // so add 
+      { new:true }
+
     );
   },
 
@@ -50,3 +54,5 @@ module.exports = {
     return VideoRequest.deleteOne({ _id: id });
   },
 };
+
+// findByIdAndUpdate() which return by default old object Not new object
