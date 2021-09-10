@@ -1,7 +1,7 @@
+const listOfVidElm = document.getElementById("listOfRequests");
 // Submit a video request. (API: POST -> `/video-request`)
 document.addEventListener("DOMContentLoaded", function () {
   const formVidReqElm = document.getElementById("formVideoRequest");
-  const listOfVidElm = document.getElementById("listOfRequests");
   formVidReqElm.addEventListener("submit", (e) => {
     e.preventDefault();
     /* Data not send when using new FormData() , because FormData()
@@ -23,7 +23,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((bolb) => bolb.json())
       .then((data) => {
         // console.log(data);
-        listOfVidElm.prepend(createVidReq(data));
+        createVidReq(data, true);
+        // listOfVidElm.prepend(vidReqContainerElm);
       });
   });
 
@@ -33,51 +34,12 @@ document.addEventListener("DOMContentLoaded", function () {
     .then((data) => {
       // console.log(data);
       data.forEach((vidInfo) => {
-        listOfVidElm.appendChild(createVidReq(vidInfo));
-        // after get data from database declar next element
-        const voteUpsElm = document.getElementById(`votes_ups_${vidInfo._id}`);
-        const voteDownsElm = document.getElementById(
-          `votes_downs_${vidInfo._id}`
-        );
-        const scoreVoteElm = document.getElementById(
-          `score_vote_${vidInfo._id}`
-        );
-        // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
-        // clicked on voteUpsElm
-        voteUpsElm.addEventListener("click", () => {
-          fetch("http://localhost:7777/video-request/vote", {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ id: vidInfo._id, vote_type: "ups" }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              // console.log(data);
-              /* go to video-requests.data.js file 
-              to add object to fix bug occur when clicked on up and down button*/
-              scoreVoteElm.innerText = data.ups - data.downs;
-            });
-        });
-        // clicked on voteDownsElm
-        voteDownsElm.addEventListener("click", () => {
-          fetch("http://localhost:7777/video-request/vote", {
-            method: "PUT",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ id: vidInfo._id, vote_type: "downs" }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              // console.log(data);
-              /* go to video-requests.data.js file 
-              to add object to fix bug occur when clicked on up and down button*/
-              scoreVoteElm.innerText = data.ups - data.downs;
-            });
-        });
+        createVidReq(vidInfo);
       });
     });
 });
 
-function createVidReq(vidInfo) {
+function createVidReq(vidInfo, isPrepend = false) {
   const vidReqContainerElm = document.createElement("div");
   const vidReqTemplate = `
 <div class="card mb-3">
@@ -115,5 +77,44 @@ function createVidReq(vidInfo) {
 </div>
 `;
   vidReqContainerElm.innerHTML = vidReqTemplate;
-  return vidReqContainerElm;
+  if (isPrepend) {
+    listOfVidElm.prepend(vidReqContainerElm);
+  } else {
+    listOfVidElm.appendChild(vidReqContainerElm);
+  }
+  // after get data from database declar next element
+  const voteUpsElm = document.getElementById(`votes_ups_${vidInfo._id}`);
+  const voteDownsElm = document.getElementById(`votes_downs_${vidInfo._id}`);
+  const scoreVoteElm = document.getElementById(`score_vote_${vidInfo._id}`);
+  // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
+  // clicked on voteUpsElm
+  voteUpsElm.addEventListener("click", () => {
+    fetch("http://localhost:7777/video-request/vote", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: vidInfo._id, vote_type: "ups" }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // console.log(data);
+        /* go to video-requests.data.js file 
+                to add object to fix bug occur when clicked on up and down button*/
+        scoreVoteElm.innerText = data.ups - data.downs;
+      });
+  });
+  // clicked on voteDownsElm
+  voteDownsElm.addEventListener("click", () => {
+    fetch("http://localhost:7777/video-request/vote", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: vidInfo._id, vote_type: "downs" }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // console.log(data);
+        /* go to video-requests.data.js file 
+                to add object to fix bug occur when clicked on up and down button*/
+        scoreVoteElm.innerText = data.ups - data.downs;
+      });
+  });
 }
