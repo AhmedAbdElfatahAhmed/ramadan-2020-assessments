@@ -29,14 +29,41 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Show list of requests below the form. (API: GET -> `/video-request`)
-  fetch("http://localhost:7777/video-request")
-    .then((response) => response.json())
-    .then((data) => {
-      // console.log(data);
-      data.forEach((vidInfo) => {
-        createVidReq(vidInfo);
+  function loadAllVidReqs(sortBy = "newFirst") {
+    fetch(`http://localhost:7777/video-request?sortBy=${sortBy}`)
+      .then((response) => response.json())
+      .then((data) => {
+        // console.log(data);
+        listOfVidElm.innerHTML = "";
+        data.forEach((vidInfo) => {
+          createVidReq(vidInfo);
+        });
       });
+  }
+  loadAllVidReqs();
+  // Sorting options `new first` the default one, and `top voted first`
+  const sortByElms = document.querySelectorAll("[id*=sort_by_]");
+    // imortant notes
+    /*
+       if using arrow function in addEventListener , this keyword which 
+       refers to parent so console.log(this.querySelector("input"))
+       which print first element input in Dom ==> 
+       <input class="form-control" name="author_name" placeholder="Write your name here">
+       so you should not use arrow function in this case
+    */
+  sortByElms.forEach((elm) => {
+    elm.addEventListener("click", function (e) {
+      e.preventDefault();
+      const sortByValue = this.querySelector("input").value;
+      loadAllVidReqs(sortByValue);
+      this.classList.add("active");
+      if (sortByValue == "topVotedFirst") {
+        document.getElementById("sort_by_new").classList.remove("active");
+      } else {
+        document.getElementById("sort_by_top").classList.remove("active");
+      }
     });
+  });
 });
 
 function createVidReq(vidInfo, isPrepend = false) {
