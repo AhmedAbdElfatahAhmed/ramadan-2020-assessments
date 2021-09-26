@@ -1,4 +1,6 @@
 const listOfVidElm = document.getElementById("listOfRequests");
+let sortByValue; // to send when search in search box
+let searchValue; // to became global with sortByValue
 // Submit a video request. (API: POST -> `/video-request`)
 document.addEventListener("DOMContentLoaded", function () {
   const formVidReqElm = document.getElementById("formVideoRequest");
@@ -29,8 +31,10 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Show list of requests below the form. (API: GET -> `/video-request`)
-  function loadAllVidReqs(sortBy = "newFirst") {
-    fetch(`http://localhost:7777/video-request?sortBy=${sortBy}`)
+  function loadAllVidReqs(sortBy = "newFirst", searchValue = "") {
+    fetch(
+      `http://localhost:7777/video-request?sortBy=${sortBy}&searchTerm=${searchValue}`
+    )
       .then((response) => response.json())
       .then((data) => {
         // console.log(data);
@@ -41,10 +45,27 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
   loadAllVidReqs();
+
+  /* solve problem when search , every letter write in search box send request 
+   this is not the best practies 
+   you should send one request after write all letters(word)
+   How ? used debounce function by me 
+   note : there is library contain debounce called lodash
+   */
+  function debounce(fn, time) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        fn.apply(this, args);
+      }, time);
+    };
+  }
+
   // Sorting options `new first` the default one, and `top voted first`
   const sortByElms = document.querySelectorAll("[id*=sort_by_]");
-    // imortant notes
-    /*
+  // imortant notes
+  /*
        if using arrow function in addEventListener , this keyword which 
        refers to parent so console.log(this.querySelector("input"))
        which print first element input in Dom ==> 
@@ -54,8 +75,8 @@ document.addEventListener("DOMContentLoaded", function () {
   sortByElms.forEach((elm) => {
     elm.addEventListener("click", function (e) {
       e.preventDefault();
-      const sortByValue = this.querySelector("input").value;
-      loadAllVidReqs(sortByValue);
+      sortByValue = this.querySelector("input").value;
+      loadAllVidReqs(sortByValue, searchValue);
       this.classList.add("active");
       if (sortByValue == "topVotedFirst") {
         document.getElementById("sort_by_new").classList.remove("active");
@@ -64,6 +85,15 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+  // Search box to search for video requests
+  const searchBoxElm = document.getElementById("search_box");
+  searchBoxElm.addEventListener(
+    "input",
+    debounce((e) => {
+      searchValue = e.target.value;
+      loadAllVidReqs(sortByValue, searchValue);
+    }, 500)
+  );
 });
 
 function createVidReq(vidInfo, isPrepend = false) {
