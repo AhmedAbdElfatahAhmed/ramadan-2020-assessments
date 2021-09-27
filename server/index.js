@@ -40,7 +40,7 @@ app.get("/video-request", async (req, res, next) => {
   if (sortBy === "topVotedFirst") {
     data = data.sort(
       (prev, next) =>
-        next.votes.ups - next.votes.downs - (prev.votes.ups - prev.votes.downs)
+        (next.votes.ups - next.votes.downs) - (prev.votes.ups - prev.votes.downs)
     );
     // console.log(data);
   }

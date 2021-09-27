@@ -18,6 +18,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 2- using multer in index.js file
       */
     const formData = new FormData(formVidReqElm);
+    /*
+     there two ways to validate form
+     first: By HTML5 , i made it in html and canceled it by write ==> novalidate in form 
+     second : manual valdiation
+   */
+    const isValid = checkValidity(formData);
+    if (!isValid) return;
+
     fetch("http://localhost:7777/video-request", {
       method: "POST",
       body: formData,
@@ -174,4 +182,39 @@ function createVidReq(vidInfo, isPrepend = false) {
         scoreVoteElm.innerText = data.ups - data.downs;
       });
   });
+}
+
+// Implementing form validation
+function checkValidity(formData) {
+  const name = formData.get("author_name");
+  const email = formData.get("author_email");
+  const topic = formData.get("topic_title");
+  const topicDetails = formData.get("topic_details");
+  const emailPattern =
+    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (!name) {
+    document.querySelector("[name=author_name]").classList.add("is-invalid");
+  }
+  if (!email || !emailPattern.test(email)) {
+    document.querySelector("[name=author_email]").classList.add("is-invalid");
+  }
+  if (!topic || topic.length >30) {
+    document.querySelector("[name=topic_title]").classList.add("is-invalid");
+  }
+  if (!topicDetails) {
+    document.querySelector("[name=topic_details]").classList.add("is-invalid");
+  }
+  const allInvalidElms = document
+    .getElementById("formVideoRequest")
+    .querySelectorAll(".is-invalid");
+  if (allInvalidElms.length) {
+    allInvalidElms.forEach((elm) => {
+      elm.addEventListener("input", function () {
+        this.classList.remove("is-invalid");
+      });
+    });
+    return false;
+  }
+
+  return true;
 }
