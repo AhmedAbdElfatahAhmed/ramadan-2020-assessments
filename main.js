@@ -1,9 +1,22 @@
 const listOfVidElm = document.getElementById("listOfRequests");
 let sortByValue; // to send when search in search box
 let searchValue; // to became global with sortByValue
+let userId='';
 // Submit a video request. (API: POST -> `/video-request`)
 document.addEventListener("DOMContentLoaded", function () {
   const formVidReqElm = document.getElementById("formVideoRequest");
+  // start for signup form
+  const formLoginElm=document.querySelector(".form-login");
+  const appContentElm=document.querySelector(".app-content");
+
+  if (window.location.search) {
+    userId = new URLSearchParams(window.location.search).get("id");
+    console.log(userId);
+    formLoginElm.classList.add("d-none");
+    appContentElm.classList.remove("d-none");
+  }
+
+  // End for signup form
   formVidReqElm.addEventListener("submit", (e) => {
     e.preventDefault();
     /* Data not send when using new FormData() , because FormData()
@@ -18,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 2- using multer in index.js file
       */
     const formData = new FormData(formVidReqElm);
+    formData.append("author_id",userId)   // add id to form
     /*
      there two ways to validate form
      first: By HTML5 , i made it in html and canceled it by write ==> novalidate in form 
@@ -186,19 +200,19 @@ function createVidReq(vidInfo, isPrepend = false) {
 
 // Implementing form validation
 function checkValidity(formData) {
-  const name = formData.get("author_name");
-  const email = formData.get("author_email");
+  // const name = formData.get("author_name");
+  // const email = formData.get("author_email");
   const topic = formData.get("topic_title");
   const topicDetails = formData.get("topic_details");
-  const emailPattern =
-    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    if (!name) {
-    document.querySelector("[name=author_name]").classList.add("is-invalid");
-  }
-  if (!email || !emailPattern.test(email)) {
-    document.querySelector("[name=author_email]").classList.add("is-invalid");
-  }
-  if (!topic || topic.length >30) {
+  // const emailPattern =
+  //   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  // if (!name) {
+  //   document.querySelector("[name=author_name]").classList.add("is-invalid");
+  // }
+  // if (!email || !emailPattern.test(email)) {
+  //   document.querySelector("[name=author_email]").classList.add("is-invalid");
+  // }
+  if (!topic || topic.length > 30) {
     document.querySelector("[name=topic_title]").classList.add("is-invalid");
   }
   if (!topicDetails) {
