@@ -1,13 +1,13 @@
 const listOfVidElm = document.getElementById("listOfRequests");
 let sortByValue; // to send when search in search box
 let searchValue; // to became global with sortByValue
-let userId='';
+let userId = "";
 // Submit a video request. (API: POST -> `/video-request`)
 document.addEventListener("DOMContentLoaded", function () {
   const formVidReqElm = document.getElementById("formVideoRequest");
   // start for signup form
-  const formLoginElm=document.querySelector(".form-login");
-  const appContentElm=document.querySelector(".app-content");
+  const formLoginElm = document.querySelector(".form-login");
+  const appContentElm = document.querySelector(".app-content");
 
   if (window.location.search) {
     userId = new URLSearchParams(window.location.search).get("id");
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 2- using multer in index.js file
       */
     const formData = new FormData(formVidReqElm);
-    formData.append("author_id",userId)   // add id to form
+    formData.append("author_id", userId); // add id to form
     /*
      there two ways to validate form
      first: By HTML5 , i made it in html and canceled it by write ==> novalidate in form 
@@ -83,6 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }, time);
     };
   }
+  
 
   // Sorting options `new first` the default one, and `top voted first`
   const sortByElms = document.querySelectorAll("[id*=sort_by_]");
@@ -98,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
     elm.addEventListener("click", function (e) {
       e.preventDefault();
       sortByValue = this.querySelector("input").value;
+      console.log(sortByValue)
       loadAllVidReqs(sortByValue, searchValue);
       this.classList.add("active");
       if (sortByValue == "topVotedFirst") {
@@ -136,7 +138,7 @@ function createVidReq(vidInfo, isPrepend = false) {
   <div class="d-flex flex-column text-center">
     <a id="votes_ups_${vidInfo._id}" class="btn btn-link">🔺</a>
     <h3 id="score_vote_${vidInfo._id}">${
-    vidInfo.votes.ups - vidInfo.votes.downs
+    vidInfo.votes.ups.length - vidInfo.votes.downs.length
   }</h3>
     <a id="votes_downs_${vidInfo._id}" class="btn btn-link">🔻</a>
   </div>
@@ -161,41 +163,79 @@ function createVidReq(vidInfo, isPrepend = false) {
   } else {
     listOfVidElm.appendChild(vidReqContainerElm);
   }
+  
+  // calling function for indector of Votes
+  applyVoteStyle(vidInfo._id,vidInfo.votes)
+
   // after get data from database declar next element
-  const voteUpsElm = document.getElementById(`votes_ups_${vidInfo._id}`);
-  const voteDownsElm = document.getElementById(`votes_downs_${vidInfo._id}`);
+  const votesElms = document.querySelectorAll(
+    `[id^=votes_][id$=_${vidInfo._id}]`
+  );
   const scoreVoteElm = document.getElementById(`score_vote_${vidInfo._id}`);
   // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
+  votesElms.forEach(elm=>
+    {
+      elm.addEventListener("click",function(e)
+      {
+        e.preventDefault();
+        // console.log(e.target.getAttribute('id'))
+        const [, vote_type, id]=e.target.getAttribute('id').split("_");//using Destructuring in ES6
+        fetch("http://localhost:7777/video-request/vote", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, vote_type, user_id:userId }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            /* go to video-requests.data.js file 
+                    to add object to fix bug occur when clicked on up and down button*/
+            scoreVoteElm.innerText = data.ups.length - data.downs.length;
+
+            // calling function for indector of Votes
+            applyVoteStyle(id,data,vote_type)
+  
+
+          });
+      });
+    });
+
+  
+// console.log(voteUpsElm)
+// console.log(voteDownsElm)
+// console.log("ups ="+vidInfo.votes.ups)
+// console.log("downs ="+vidInfo.votes.downs)
+
+  // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
   // clicked on voteUpsElm
-  voteUpsElm.addEventListener("click", () => {
-    fetch("http://localhost:7777/video-request/vote", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: vidInfo._id, vote_type: "ups" }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        // console.log(data);
-        /* go to video-requests.data.js file 
-                to add object to fix bug occur when clicked on up and down button*/
-        scoreVoteElm.innerText = data.ups - data.downs;
-      });
-  });
+  // voteUpsElm.addEventListener("click", () => {
+  //   fetch("http://localhost:7777/video-request/vote", {
+  //     method: "PUT",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ id: vidInfo._id, vote_type: "ups" }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       // console.log(data);
+  //       /* go to video-requests.data.js file 
+  //               to add object to fix bug occur when clicked on up and down button*/
+  //       scoreVoteElm.innerText = data.ups - data.downs;
+  //     });
+  // });
   // clicked on voteDownsElm
-  voteDownsElm.addEventListener("click", () => {
-    fetch("http://localhost:7777/video-request/vote", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: vidInfo._id, vote_type: "downs" }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        // console.log(data);
-        /* go to video-requests.data.js file 
-                to add object to fix bug occur when clicked on up and down button*/
-        scoreVoteElm.innerText = data.ups - data.downs;
-      });
-  });
+  // voteDownsElm.addEventListener("click", () => {
+  //   fetch("http://localhost:7777/video-request/vote", {
+  //     method: "PUT",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ id: vidInfo._id, vote_type: "downs" }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       // console.log(data);
+  //       /* go to video-requests.data.js file 
+  //               to add object to fix bug occur when clicked on up and down button*/
+  //       scoreVoteElm.innerText = data.ups - data.downs;
+  //     });
+  // });
 }
 
 // Implementing form validation
@@ -232,3 +272,40 @@ function checkValidity(formData) {
 
   return true;
 }
+
+
+
+// function for indector of Votes
+function applyVoteStyle(video_id,votes_list,vote_type)
+{
+  if(!vote_type)
+  {
+  if(votes_list.ups.includes(userId))
+  {
+    vote_type="ups"
+  }
+  else if(votes_list.downs.includes(userId))
+  {
+    vote_type="downs"
+  }
+  else{
+    return
+  }
+  }
+
+  const voteUpsElm = document.getElementById(`votes_ups_${video_id}`);
+  const voteDownsElm = document.getElementById(`votes_downs_${video_id}`);
+
+  const voteDirElm = vote_type==="ups" ? voteUpsElm : voteDownsElm ;
+  const otherDirElm = vote_type==="ups" ? voteDownsElm : voteUpsElm ;
+
+if(votes_list[vote_type].includes(userId))
+  {
+    voteDirElm.style.opacity=1;
+    otherDirElm.style.opacity=0.5;
+  }
+  else{
+    otherDirElm.style.opacity=1;
+  }
+}
+

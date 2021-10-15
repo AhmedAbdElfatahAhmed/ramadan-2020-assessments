@@ -4,7 +4,7 @@ module.exports = {
   createRequest: async (vidRequestData) => {
     const authorId = vidRequestData.author_id;
     if (authorId) {
-      const userObj= await User.findOne({_id: authorId})
+      const userObj = await User.findOne({ _id: authorId });
       vidRequestData.author_name = userObj.author_name;
       vidRequestData.author_email = userObj.author_email;
     }
@@ -38,15 +38,28 @@ module.exports = {
     return VideoRequest.findByIdAndUpdate(id, updates, { new: true });
   },
 
-  updateVoteForRequest: async (id, vote_type) => {
+  updateVoteForRequest: async (id, vote_type, user_id) => {
     const oldRequest = await VideoRequest.findById({ _id: id });
     const other_type = vote_type === "ups" ? "downs" : "ups";
+
+    const oldVoteList = oldRequest.votes[vote_type];
+    const oldOtherList = oldRequest.votes[other_type];
+
+    if (!oldVoteList.includes(user_id)) {
+      oldVoteList.push(user_id);
+    } else {
+      oldVoteList.splice(user_id);
+    }
+    if (oldVoteList.includes(user_id)) {
+      oldOtherList.splice(user_id);
+    }
+
     return VideoRequest.findByIdAndUpdate(
       { _id: id },
       {
         votes: {
-          [vote_type]: ++oldRequest.votes[vote_type],
-          [other_type]: oldRequest.votes[other_type],
+          [vote_type]:oldVoteList,
+          [other_type]:oldOtherList,
         },
       },
       // because findByIdAndUpdate()function  return by default old object Not new object
