@@ -27,20 +27,20 @@ app.post("/video-request", upload.none(), async (req, res, next) => {
 });
 
 app.get("/video-request", async (req, res, next) => {
-  const { sortBy, searchTerm } = req.query;
+  const { sortBy, searchTerm ,filterBy} = req.query;
   let data;
   console.log(req.query);
   // console.log(sortBy);
   if (searchTerm) {
-    data = await VideoRequestData.searchRequests(searchTerm);
+    data = await VideoRequestData.searchRequests(searchTerm , filterBy);
   } else {
-    data = await VideoRequestData.getAllVideoRequests();
+    data = await VideoRequestData.getAllVideoRequests(filterBy);
   }
   // console.log(data);
   if (sortBy === "topVotedFirst") {
     data = data.sort(
       (prev, next) =>
-        (next.votes.ups - next.votes.downs) - (prev.votes.ups - prev.votes.downs)
+        (next.votes.ups.length - next.votes.downs.length) - (prev.votes.ups.length - prev.votes.downs.length)
     );
     // console.log(data);
   }

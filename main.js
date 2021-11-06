@@ -1,6 +1,7 @@
 const listOfVidElm = document.getElementById("listOfRequests");
 let sortByValue; // to send when search in search box
 let searchValue; // to became global with sortByValue
+let filterBy;
 let userId = "";
 let isSuperUser = false;
 const SUBER_USER_ID = "19900411";
@@ -59,9 +60,9 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Show list of requests below the form. (API: GET -> `/video-request`)
-  function loadAllVidReqs(sortBy = "newFirst", searchValue = "") {
+  function loadAllVidReqs(sortBy = "newFirst", searchValue = "" , filterBy="all") {
     fetch(
-      `http://localhost:7777/video-request?sortBy=${sortBy}&searchTerm=${searchValue}`
+      `http://localhost:7777/video-request?sortBy=${sortBy}&searchTerm=${searchValue}&filterBy=${filterBy}`
     )
       .then((response) => response.json())
       .then((data) => {
@@ -105,7 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       sortByValue = this.querySelector("input").value;
       console.log(sortByValue);
-      loadAllVidReqs(sortByValue, searchValue);
+      loadAllVidReqs(sortByValue, searchValue ,filterBy);
       this.classList.add("active");
       if (sortByValue == "topVotedFirst") {
         document.getElementById("sort_by_new").classList.remove("active");
@@ -114,16 +115,37 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+
+ // for filter by All , new ,planned and done
+ const filterByElms = document.querySelectorAll("[id^=filter_by_]");
+
+ filterByElms.forEach(elm=>
+ {
+  elm.addEventListener("click",function(e)
+  {
+    e.preventDefault();
+     filterBy=e.target.getAttribute("id").split("_")[2];
+    loadAllVidReqs(sortByValue, searchValue ,filterBy);
+    filterByElms.forEach(option=>option.classList.remove("active"))
+    this.classList.add("active");
+  })
+ })
+
+
   // Search box to search for video requests
   const searchBoxElm = document.getElementById("search_box");
   searchBoxElm.addEventListener(
     "input",
     debounce((e) => {
       searchValue = e.target.value;
-      loadAllVidReqs(sortByValue, searchValue);
+      loadAllVidReqs(sortByValue, searchValue , filterBy);
     }, 500)
   );
 });
+
+ 
+
+
 
 function createVidReq(vidInfo, isPrepend = false) {
   const vidReqContainerElm = document.createElement("div");
@@ -165,6 +187,11 @@ ${
     }
     </p>
   </div>
+  <div class="ml-auto mr-3">
+  <iframe width="240" height="135" 
+  src="${vidInfo.video_ref.link}"  
+  frameborder="0" allowfullscreen></iframe>
+  </div>
   <div class="d-flex flex-column text-center">
     <a id="votes_ups_${vidInfo._id}" class="btn btn-link">🔺</a>
     <h3 id="score_vote_${vidInfo._id}">${
@@ -174,8 +201,18 @@ ${
   </div>
 </div>
 <div class="card-footer d-flex flex-row justify-content-between">
-  <div>
-    <span class="text-info">${vidInfo.status}</span>
+  <div class="${
+    vidInfo.status === "done"
+      ? "text-success"
+      : vidInfo.status === "planned"
+      ? "text-primary"
+      : ""
+  }">
+    <span>${vidInfo.status.toUpperCase()} ${
+    vidInfo.status === "done"
+      ? `on ${new Date(vidInfo.video_ref.date).toLocaleString()}`
+      : ""
+  }</span>
     &bullet; added by <strong>${vidInfo.author_name}</strong> on
     <strong>${new Date(vidInfo.submit_date).toLocaleString()}</strong>
   </div>
@@ -274,7 +311,7 @@ ${
   //End for super admin
 
   // calling function for indector of Votes
-  applyVoteStyle(vidInfo._id, vidInfo.votes);
+  applyVoteStyle(vidInfo._id, vidInfo.votes,vidInfo.status==="done");
 
   // after get data from database declar next element
   const votesElms = document.querySelectorAll(
@@ -283,7 +320,7 @@ ${
   const scoreVoteElm = document.getElementById(`score_vote_${vidInfo._id}`);
   // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
   votesElms.forEach((elm) => {
-    if(isSuperUser)return;
+    if (isSuperUser || vidInfo.status=="done") return;
     elm.addEventListener("click", function (e) {
       e.preventDefault();
       // console.log(e.target.getAttribute('id'))
@@ -300,7 +337,7 @@ ${
           scoreVoteElm.innerText = data.ups.length - data.downs.length;
 
           // calling function for indector of Votes
-          applyVoteStyle(id, data, vote_type);
+          applyVoteStyle(id, data,vidInfo.status==="done", vote_type);
         });
     });
   });
@@ -379,15 +416,15 @@ function checkValidity(formData) {
 }
 
 // function for indector of Votes
-function applyVoteStyle(video_id, votes_list, vote_type) {
+function applyVoteStyle(video_id, votes_list, isDisabled, vote_type) {
   const voteUpsElm = document.getElementById(`votes_ups_${video_id}`);
   const voteDownsElm = document.getElementById(`votes_downs_${video_id}`);
-  if (isSuperUser) {
-    voteUpsElm.style.opacity=0.5;
-    voteDownsElm.style.opacity=0.5;
-    voteUpsElm.style.cursor="not-allowed";
-    voteDownsElm.style.cursor="not-allowed";
-    return
+  if (isSuperUser || isDisabled) {
+    voteUpsElm.style.opacity = 0.5;
+    voteDownsElm.style.opacity = 0.5;
+    voteUpsElm.style.cursor = "not-allowed";
+    voteDownsElm.style.cursor = "not-allowed";
+    return;
   }
   if (!vote_type) {
     if (votes_list.ups.includes(userId)) {
