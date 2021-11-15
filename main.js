@@ -1,7 +1,8 @@
 import { debounce } from "./debounce.js";
 import { createVidReq } from "./createVidReq.js";
 import { checkValidity } from "./checkValidity.js";
-import API from "./api.js";
+import dataService from "./dataService.js";
+
 // const listOfVidElm = document.getElementById("listOfRequests");
 const SUBER_USER_ID = "19900411";
 export const state = {
@@ -11,7 +12,6 @@ export const state = {
   userId: "",
   isSuperUser: false,
 };
-
 
 // Submit a video request. (API: POST -> `/video-request`)
 document.addEventListener("DOMContentLoaded", function () {
@@ -55,19 +55,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const isValid = checkValidity(formData);
     if (!isValid) return;
 
-    fetch("http://localhost:7777/video-request", {
-      method: "POST",
-      body: formData,
-    })
-      .then((bolb) => bolb.json())
-      .then((data) => {
-        // console.log(data);
-        createVidReq(data, state, true);
-        // listOfVidElm.prepend(vidReqContainerElm);
-      });
+    dataService.addVideoReq(formData).then((data) => {
+      // console.log(data);
+      createVidReq(data, state, true);
+      // listOfVidElm.prepend(vidReqContainerElm);
+    });
   });
 
-  API.loadAllVidReqs();
+  dataService.loadAllVidReqs();
 
   // Sorting options `new first` the default one, and `top voted first`
   const sortByElms = document.querySelectorAll("[id*=sort_by_]");
@@ -84,7 +79,11 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       state.sortByValue = this.querySelector("input").value;
       // console.log(state.sortByValue);
-      API.loadAllVidReqs(state.sortByValue, state.searchValue, state.filterBy);
+      dataService.loadAllVidReqs(
+        state.sortByValue,
+        state.searchValue,
+        state.filterBy
+      );
       this.classList.add("active");
       if (state.sortByValue == "topVotedFirst") {
         document.getElementById("sort_by_new").classList.remove("active");
@@ -101,7 +100,11 @@ document.addEventListener("DOMContentLoaded", function () {
     elm.addEventListener("click", function (e) {
       e.preventDefault();
       state.filterBy = e.target.getAttribute("id").split("_")[2];
-      API.loadAllVidReqs(state.sortByValue, state.searchValue, state.filterBy);
+      dataService.loadAllVidReqs(
+        state.sortByValue,
+        state.searchValue,
+        state.filterBy
+      );
       filterByElms.forEach((option) => option.classList.remove("active"));
       this.classList.add("active");
     });
@@ -113,8 +116,11 @@ document.addEventListener("DOMContentLoaded", function () {
     "input",
     debounce((e) => {
       state.searchValue = e.target.value;
-      API.loadAllVidReqs(state.sortByValue, state.searchValue, state.filterBy);
+      dataService.loadAllVidReqs(
+        state.sortByValue,
+        state.searchValue,
+        state.filterBy
+      );
     }, 500)
   );
 });
-

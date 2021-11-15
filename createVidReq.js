@@ -1,10 +1,11 @@
 const listOfVidElm = document.getElementById("listOfRequests");
+import api from "./api.js";
 import { applyVoteStyle } from "./applyVoteStyle.js";
-import API from "./api.js";
+import dataService from "./dataService.js";
 
-export function createVidReq(vidInfo,state,isPrepend = false) {
-    const vidReqContainerElm = document.createElement("div");
-   const vidReqTemplate = `
+export function createVidReq(vidInfo, state, isPrepend = false) {
+  const vidReqContainerElm = document.createElement("div");
+  const vidReqTemplate = `
   <div class="card mb-3">
   ${
     state.isSuperUser
@@ -50,8 +51,8 @@ export function createVidReq(vidInfo,state,isPrepend = false) {
     <div class="d-flex flex-column text-center">
       <a id="votes_ups_${vidInfo._id}" class="btn btn-link">🔺</a>
       <h3 id="score_vote_${vidInfo._id}">${
-      vidInfo.votes.ups.length - vidInfo.votes.downs.length
-    }</h3>
+    vidInfo.votes.ups.length - vidInfo.votes.downs.length
+  }</h3>
       <a id="votes_downs_${vidInfo._id}" class="btn btn-link">🔻</a>
     </div>
   </div>
@@ -64,10 +65,10 @@ export function createVidReq(vidInfo,state,isPrepend = false) {
         : ""
     }">
       <span>${vidInfo.status.toUpperCase()} ${
-      vidInfo.status === "done"
-        ? `on ${new Date(vidInfo.video_ref.date).toLocaleString()}`
-        : ""
-    }</span>
+    vidInfo.status === "done"
+      ? `on ${new Date(vidInfo.video_ref.date).toLocaleString()}`
+      : ""
+  }</span>
       &bullet; added by <strong>${vidInfo.author_name}</strong> on
       <strong>${new Date(vidInfo.submit_date).toLocaleString()}</strong>
     </div>
@@ -79,144 +80,134 @@ export function createVidReq(vidInfo,state,isPrepend = false) {
   </div>
   </div>
   `;
-    vidReqContainerElm.innerHTML = vidReqTemplate;
-    if (isPrepend) {
-      listOfVidElm.prepend(vidReqContainerElm);
-    } else {
-      listOfVidElm.appendChild(vidReqContainerElm);
-    }
-  
-    //Start for super admin
-    const adminChangeStatusElm = document.getElementById(
-      `admin_change_status_${vidInfo._id}`
-    );
-  
-    const adminVideoResContainer = document.getElementById(
-      `admin_video_res_container_${vidInfo._id}`
-    );
-    const adminVideoResElm = document.getElementById(
-      `admin_video_res_${vidInfo._id}`
-    );
-    const adminSaveVideoResElm = document.getElementById(
-      `admin_save_video_res_${vidInfo._id}`
-    );
-    const adminDeleteVideoReqElm = document.getElementById(
-      `admin_delete_video_req_${vidInfo._id}`
-    );
-  
-    if (state.isSuperUser) {
-      adminChangeStatusElm.value = vidInfo.status;
-      adminVideoResElm.value = vidInfo.video_ref.link;
-  
-      adminChangeStatusElm.addEventListener("change", (e) => {
-        // console.log(e.target.value);
-        if (e.target.value == "done") {
-          adminVideoResContainer.classList.remove("d-none");
-        } else {
-          API.updateVideoStatus(vidInfo._id, e.target.value);
-        }
-      });
-  
-      adminSaveVideoResElm.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (!adminVideoResElm.value) {
-        }
-        adminVideoResElm.classList.add("is-invalid");
-        adminVideoResElm.addEventListener("input", () => {
-          adminVideoResElm.classList.remove("is-invalid");
-        });
-        API.updateVideoStatus(vidInfo._id, "done", adminVideoResElm.value);
-      });
-      adminDeleteVideoReqElm.addEventListener("click", (e) => {
-        e.preventDefault();
-        const isSure = confirm(
-          `Are you sure you want to delete ${vidInfo.topic_title}`
-        );
-        if (!isSure) return;
-        fetch("http://localhost:7777/video-request", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: vidInfo._id,
-          }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            // console.log(data);
-            window.location.reload();
-          });
-      });
-    }
-   
-    //End for super admin
-  
-    // calling function for indector of Votes
-    applyVoteStyle(vidInfo._id, vidInfo.votes,vidInfo.status === "done",state);
-  
-    // after get data from database declar next element
-    const votesElms = document.querySelectorAll(
-      `[id^=votes_][id$=_${vidInfo._id}]`
-    );
-    const scoreVoteElm = document.getElementById(`score_vote_${vidInfo._id}`);
-    // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
-    votesElms.forEach((elm) => {
-      if (state.isSuperUser || vidInfo.status == "done") return;
-      elm.addEventListener("click", function (e) {
-        e.preventDefault();
-        // console.log(e.target.getAttribute('id'))
-        const [, vote_type, id] = e.target.getAttribute("id").split("_"); //using Destructuring in ES6
-        fetch("http://localhost:7777/video-request/vote", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, vote_type, user_id: state.userId }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            /* go to video-requests.data.js file 
-                      to add object to fix bug occur when clicked on up and down button*/
-            scoreVoteElm.innerText = data.ups.length - data.downs.length;
-  
-            // calling function for indector of Votes
-            applyVoteStyle(id, data, vidInfo.status === "done",state, vote_type);
-          });
-      });
-    });
-  
-    // console.log(voteUpsElm)
-    // console.log(voteDownsElm)
-    // console.log("ups ="+vidInfo.votes.ups)
-    // console.log("downs ="+vidInfo.votes.downs)
-  
-    // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
-    // clicked on voteUpsElm
-    // voteUpsElm.addEventListener("click", () => {
-    //   fetch("http://localhost:7777/video-request/vote", {
-    //     method: "PUT",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ id: vidInfo._id, vote_type: "ups" }),
-    //   })
-    //     .then((response) => response.json())
-    //     .then((data) => {
-    //       // console.log(data);
-    //       /* go to video-requests.data.js file
-    //               to add object to fix bug occur when clicked on up and down button*/
-    //       scoreVoteElm.innerText = data.ups - data.downs;
-    //     });
-    // });
-    // clicked on voteDownsElm
-    // voteDownsElm.addEventListener("click", () => {
-    //   fetch("http://localhost:7777/video-request/vote", {
-    //     method: "PUT",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ id: vidInfo._id, vote_type: "downs" }),
-    //   })
-    //     .then((response) => response.json())
-    //     .then((data) => {
-    //       // console.log(data);
-    //       /* go to video-requests.data.js file
-    //               to add object to fix bug occur when clicked on up and down button*/
-    //       scoreVoteElm.innerText = data.ups - data.downs;
-    //     });
-    // });
+  vidReqContainerElm.innerHTML = vidReqTemplate;
+  if (isPrepend) {
+    listOfVidElm.prepend(vidReqContainerElm);
+  } else {
+    listOfVidElm.appendChild(vidReqContainerElm);
   }
 
+  //Start for super admin
+  const adminChangeStatusElm = document.getElementById(
+    `admin_change_status_${vidInfo._id}`
+  );
+
+  const adminVideoResContainer = document.getElementById(
+    `admin_video_res_container_${vidInfo._id}`
+  );
+  const adminVideoResElm = document.getElementById(
+    `admin_video_res_${vidInfo._id}`
+  );
+  const adminSaveVideoResElm = document.getElementById(
+    `admin_save_video_res_${vidInfo._id}`
+  );
+  const adminDeleteVideoReqElm = document.getElementById(
+    `admin_delete_video_req_${vidInfo._id}`
+  );
+
+  if (state.isSuperUser) {
+    adminChangeStatusElm.value = vidInfo.status;
+    adminVideoResElm.value = vidInfo.video_ref.link;
+
+    adminChangeStatusElm.addEventListener("change", (e) => {
+      // console.log(e.target.value);
+      if (e.target.value == "done") {
+        adminVideoResContainer.classList.remove("d-none");
+      } else {
+        dataService.updateVideoStatus(vidInfo._id, e.target.value);
+      }
+    });
+
+    adminSaveVideoResElm.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (!adminVideoResElm.value) {
+      }
+      adminVideoResElm.classList.add("is-invalid");
+      adminVideoResElm.addEventListener("input", () => {
+        adminVideoResElm.classList.remove("is-invalid");
+      });
+      dataService.updateVideoStatus(
+        vidInfo._id,
+        "done",
+        adminVideoResElm.value
+      );
+    });
+    adminDeleteVideoReqElm.addEventListener("click", (e) => {
+      e.preventDefault();
+      const isSure = confirm(
+        `Are you sure you want to delete ${vidInfo.topic_title}`
+      );
+      if (!isSure) return;
+
+      dataService.deletVideoReq(vidInfo).then((_) => {
+        // console.log(data);
+        window.location.reload();
+      });
+    });
+  }
+
+  //End for super admin
+
+  // calling function for indector of Votes
+  applyVoteStyle(vidInfo._id, vidInfo.votes, vidInfo.status === "done", state);
+
+  // after get data from database declar next element
+  const votesElms = document.querySelectorAll(
+    `[id^=votes_][id$=_${vidInfo._id}]`
+  );
+  const scoreVoteElm = document.getElementById(`score_vote_${vidInfo._id}`);
+  // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
+  votesElms.forEach((elm) => {
+    if (state.isSuperUser || vidInfo.status == "done") return;
+    elm.addEventListener("click", function (e) {
+      e.preventDefault();
+      // console.log(e.target.getAttribute('id'))
+      const [, vote_type, id] = e.target.getAttribute("id").split("_"); //using Destructuring in ES6
+      dataService.updateVotes(id, vote_type, state).then((data) => {
+        /* go to video-requests.data.js file 
+                      to add object to fix bug occur when clicked on up and down button*/
+        scoreVoteElm.innerText = data.ups.length - data.downs.length;
+
+        // calling function for indector of Votes
+        applyVoteStyle(id, data, vidInfo.status === "done", state, vote_type);
+      });
+    });
+  });
+
+  // console.log(voteUpsElm)
+  // console.log(voteDownsElm)
+  // console.log("ups ="+vidInfo.votes.ups)
+  // console.log("downs ="+vidInfo.votes.downs)
+
+  // Vote up and down on each request. (API: PUT -> `/video-request/vote`)
+  // clicked on voteUpsElm
+  // voteUpsElm.addEventListener("click", () => {
+  //   fetch("http://localhost:7777/video-request/vote", {
+  //     method: "PUT",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ id: vidInfo._id, vote_type: "ups" }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       // console.log(data);
+  //       /* go to video-requests.data.js file
+  //               to add object to fix bug occur when clicked on up and down button*/
+  //       scoreVoteElm.innerText = data.ups - data.downs;
+  //     });
+  // });
+  // clicked on voteDownsElm
+  // voteDownsElm.addEventListener("click", () => {
+  //   fetch("http://localhost:7777/video-request/vote", {
+  //     method: "PUT",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ id: vidInfo._id, vote_type: "downs" }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       // console.log(data);
+  //       /* go to video-requests.data.js file
+  //               to add object to fix bug occur when clicked on up and down button*/
+  //       scoreVoteElm.innerText = data.ups - data.downs;
+  //     });
+  // });
+}
