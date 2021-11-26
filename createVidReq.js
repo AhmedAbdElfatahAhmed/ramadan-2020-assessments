@@ -60,11 +60,12 @@ function bindAdminActions(id, state, status, videoRef, title) {
     adminSaveVideoResElm.addEventListener("click", (e) => {
       e.preventDefault();
       if (!adminVideoResElm.value) {
-      }
       adminVideoResElm.classList.add("is-invalid");
       adminVideoResElm.addEventListener("input", () => {
         adminVideoResElm.classList.remove("is-invalid");
       });
+      return;
+    }
       dataService.updateVideoStatus(id, "done", adminVideoResElm.value);
     });
     adminDeleteVideoReqElm.addEventListener("click", (e) => {
@@ -72,7 +73,7 @@ function bindAdminActions(id, state, status, videoRef, title) {
       const isSure = confirm(`Are you sure you want to delete ${title}`);
       if (!isSure) return;
 
-      dataService.deletVideoReq(vidInfo).then((_) => {
+      dataService.deletVideoReq(vidInfo._id).then((_) => {
         // console.log(data);
         window.location.reload();
       });
@@ -137,11 +138,15 @@ export function createVidReq(vidInfo, state, isPrepend = false) {
       ${expected && ` <strong>Expected results:</strong>${expected}`}
       </p>
     </div>
-    <div class="ml-auto mr-3">
-    <iframe width="240" height="135" 
-    src="${videoRef.link}"  
-    frameborder="0" allowfullscreen></iframe>
-    </div>
+    ${
+      status === 'done'
+        ? `<div class="ml-auto mr-3">
+      <iframe width="240" height="135"
+        src="${videoRef.link}"
+        frameborder="0" allowfullscreen></iframe>
+    </div>`
+        : ''
+    }
     <div class="d-flex flex-column text-center">
       <a id="votes_ups_${id}" class="btn btn-link">🔺</a>
       <h3 id="score_vote_${id}">${voteScore}</h3>

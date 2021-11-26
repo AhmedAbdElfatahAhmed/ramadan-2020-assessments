@@ -5,16 +5,16 @@ export default {
   addVideoReq: (formData) => {
     return API.videoReq.post(formData);
   },
-  updateVideoStatus: (videoId, status, videoResValue = "") => {
+  updateVideoStatus: (videoId, status, resVideo = "") => {
     return API.videoReq
-      .update(videoId, status, (videoResValue = ""))
+      .update(videoId, status, resVideo)
       .then((_) => {
         // console.log(data);
         window.location.reload();
       });
   },
-  deletVideoReq: (vidInfo) => {
-    return API.videoReq.delete(vidInfo);
+  deletVideoReq: (id) => {
+    return API.videoReq.delete(id);
   },
   // function loadAllVidReqs To Show list of requests below the form. (API: GET -> `/video-request`)
   loadAllVidReqs: (

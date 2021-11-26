@@ -12,23 +12,23 @@ export default {
         body: formData,
       }).then((bolb) => bolb.json());
     },
-    update: (videoId, status, videoResValue = "") => {
+    update: (id, status,resVideo) => {
       return fetch(`${apiUrl}/video-request`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: videoId,
+          id,
           status,
-          resVideo: videoResValue,
+          resVideo,
         }),
       }).then((response) => response.json());
     },
-    delete: (vidInfo) => {
+    delete: (id) => {
       return fetch(`${apiUrl}/video-request`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: vidInfo._id,
+          id,
         }),
       }).then((response) => response.json());
     },
